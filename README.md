@@ -92,10 +92,12 @@ CI (`.github/workflows/ci.yml`) typechecks, tests, bundles the JS and builds a
 release APK on every PR. That APK is signed with the debug key and uploaded as a
 workflow artifact.
 
-Publishing (`.github/workflows/release.yml`): push a tag such as `v0.1.0`. The
-workflow builds the APK, signs it with the release key, checks the signature is
-not the debug key, and attaches `iris-desk-voice-v0.1.0.apk` and its `.sha256` to a
-GitHub Release.
+Publishing (`.github/workflows/release.yml`): a push to `main` whose `app.json`
+`version` has no release yet publishes `v<version>`. Bump the version to cut the
+next one; other pushes to `main` skip in seconds. Pushing a tag such as `v0.1.0`
+builds that tag. Either way the workflow builds the APK, signs it, checks the
+signature is not the debug key, and attaches `iris-desk-voice-v0.1.0.apk` and its
+`.sha256` to a GitHub Release.
 
 #### Release signing
 
