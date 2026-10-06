@@ -38,23 +38,43 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: npm ci
       - run: npm run typecheck && npm test -- --ci
-      - name: Signing key from repository secrets (never from the repo)
+      # The signing key comes from repository secrets, never from the repo.
+      # Without them the release is still signed, with a key made on this
+      # runner for this one build and then discarded: the APK installs, but a
+      # later build will not update it in place (Android needs the same key),
+      # and the release notes say so. Set the four secrets for a key you keep.
+      - name: Signing key
         env:
           IRIS_KEYSTORE_BASE64: ${{ secrets.IRIS_KEYSTORE_BASE64 }}
+          IRIS_KEYSTORE_PASSWORD: ${{ secrets.IRIS_KEYSTORE_PASSWORD }}
+          IRIS_KEY_ALIAS: ${{ secrets.IRIS_KEY_ALIAS }}
+          IRIS_KEY_PASSWORD: ${{ secrets.IRIS_KEY_PASSWORD }}
         run: |
-          if [ -z "$IRIS_KEYSTORE_BASE64" ]; then
-            echo "::error::Repository secret IRIS_KEYSTORE_BASE64 is not set — see README, Release signing"; exit 1
+          KS="$RUNNER_TEMP/iris-release.jks"
+          if [ -n "$IRIS_KEYSTORE_BASE64" ]; then
+            printf '%s' "$IRIS_KEYSTORE_BASE64" | base64 -d > "$KS"
+            STORE_PW="$IRIS_KEYSTORE_PASSWORD"; ALIAS="$IRIS_KEY_ALIAS"; KEY_PW="$IRIS_KEY_PASSWORD"
+            echo "SIGNING_NOTE=Signed with the project's release key (repository secret)." >> "$GITHUB_ENV"
+          else
+            echo "::warning::Repository signing secrets are not set — signing with a one-time key. See README, Release signing."
+            STORE_PW="$(openssl rand -hex 24)"; KEY_PW="$STORE_PW"; ALIAS=iris
+            echo "::add-mask::$STORE_PW"
+            keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias "$ALIAS" -keyalg RSA -keysize 4096 \
+              -validity 10000 -storepass "$STORE_PW" -keypass "$KEY_PW" \
+              -dname "CN=Iris Desk Voice (one-time key), O=elghaly" 2>/dev/null
+            echo "SIGNING_NOTE=Signed with a one-time key made for this build. It installs, but a later build will not update it in place: uninstall this one first." >> "$GITHUB_ENV"
           fi
-          printf '%s' "$IRIS_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/iris-release.jks"
-          echo "IRIS_KEYSTORE_PATH=$RUNNER_TEMP/iris-release.jks" >> "$GITHUB_ENV"
+          echo "::add-mask::$STORE_PW"; echo "::add-mask::$KEY_PW"
+          {
+            echo "IRIS_KEYSTORE_PATH=$KS"
+            echo "IRIS_KEYSTORE_PASSWORD=$STORE_PW"
+            echo "IRIS_KEY_ALIAS=$ALIAS"
+            echo "IRIS_KEY_PASSWORD=$KEY_PW"
+          } >> "$GITHUB_ENV"
       - name: Generate the native project
         run: npx expo prebuild --platform android --no-install --clean
       - name: Assemble the signed release APK
         working-directory: android
-        env:
-          IRIS_KEYSTORE_PASSWORD: ${{ secrets.IRIS_KEYSTORE_PASSWORD }}
-          IRIS_KEY_ALIAS: ${{ secrets.IRIS_KEY_ALIAS }}
-          IRIS_KEY_PASSWORD: ${{ secrets.IRIS_KEY_PASSWORD }}
         run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,x86_64
       - name: Verify the signature is the release key, not the debug key
         run: |
@@ -81,5 +101,6 @@ jobs:
             - Commit: `${{ env.IRIS_COMMIT }}`
             - APK sha256: `${{ env.APK_SHA256 }}`
             - Signing certificate sha256: `${{ env.CERT_SHA256 }}`
+            - ${{ env.SIGNING_NOTE }}
 
             Install: download the APK on the phone, allow "install unknown apps" for the browser, open it. Needs a Mobile Wallet Adapter wallet (Phantom or Solflare) on the same phone.

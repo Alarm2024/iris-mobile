@@ -110,7 +110,21 @@ The keystore is never committed. The release workflow reads four repository secr
 
 [`plugins/withReleaseSigning.js`](plugins/withReleaseSigning.js) adds a release
 signing config to the generated `build.gradle` that reads these from the
-environment. Builds without them fall back to the debug key.
+environment. PR builds have none and fall back to the debug key.
+
+Without the secrets, the release workflow still signs: it makes a one-time key
+on the runner, uses it for that build and throws it away. That APK installs,
+but no later build can update it in place, so the release notes say "uninstall
+this one first". Set the four secrets before you publish anywhere that expects
+updates, such as the Solana dApp Store.
+
+To make a key you keep (any machine with Java):
+
+```sh
+keytool -genkeypair -keystore iris-release.jks -storetype PKCS12 -alias iris \
+  -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Iris Desk Voice, O=elghaly"
+base64 -w0 iris-release.jks   # paste as IRIS_KEYSTORE_BASE64
+```
 
 Keep a backup of the keystore. Android only installs an update when it is signed with the same key.
 
