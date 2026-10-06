@@ -1,8 +1,12 @@
 name: Release APK
 
-# Push a tag like v0.1.0 to build, sign and publish the APK as a GitHub Release.
+# A push to main whose app.json version has no release yet builds, signs and
+# publishes it as v<version>. Bump "version" in app.json to cut the next one;
+# other pushes to main skip in a few seconds. A pushed tag like v0.1.0, or a
+# manual run on an existing tag, builds that tag instead.
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
     inputs:
@@ -13,18 +17,57 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  decide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.which.outputs.tag }}
+      build: ${{ steps.which.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.sha }}
+      - name: Which release
+        id: which
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"; BUILD=true
+          elif [ "$GITHUB_REF_TYPE" = tag ]; then
+            TAG="$GITHUB_REF_NAME"; BUILD=true
+          else
+            TAG="v$(node -p "require('./app.json').expo.version")"
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "$TAG is already released — bump version in app.json for the next one."
+              BUILD=false
+            else
+              BUILD=true
+            fi
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "release $TAG: build=$BUILD"
+
   release:
+    needs: decide
+    if: needs.decide.outputs.build == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      TAG: ${{ needs.decide.outputs.tag }}
       IRIS_VERSION_CODE: ${{ github.run_number }}
       EXPO_NO_TELEMETRY: 1
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ github.event.inputs.tag || github.sha }}
       - name: Commit being built
         run: echo "IRIS_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
@@ -91,6 +134,8 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
+          # Creates the tag at the commit just built when it does not exist yet.
+          target_commitish: ${{ env.IRIS_COMMIT }}
           name: Iris Desk Voice ${{ env.TAG }}
           files: |
             out/iris-desk-voice-${{ env.TAG }}.apk
