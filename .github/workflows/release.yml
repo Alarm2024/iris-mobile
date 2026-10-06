@@ -1,0 +1,85 @@
+name: Release APK
+
+# Push a tag like v0.1.0 to build, sign and publish the APK as a GitHub Release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build, e.g. v0.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      IRIS_VERSION_CODE: ${{ github.run_number }}
+      EXPO_NO_TELEMETRY: 1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - name: Commit being built
+        run: echo "IRIS_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - run: npm run typecheck && npm test -- --ci
+      - name: Signing key from repository secrets (never from the repo)
+        env:
+          IRIS_KEYSTORE_BASE64: ${{ secrets.IRIS_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$IRIS_KEYSTORE_BASE64" ]; then
+            echo "::error::Repository secret IRIS_KEYSTORE_BASE64 is not set — see README, Release signing"; exit 1
+          fi
+          printf '%s' "$IRIS_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/iris-release.jks"
+          echo "IRIS_KEYSTORE_PATH=$RUNNER_TEMP/iris-release.jks" >> "$GITHUB_ENV"
+      - name: Generate the native project
+        run: npx expo prebuild --platform android --no-install --clean
+      - name: Assemble the signed release APK
+        working-directory: android
+        env:
+          IRIS_KEYSTORE_PASSWORD: ${{ secrets.IRIS_KEYSTORE_PASSWORD }}
+          IRIS_KEY_ALIAS: ${{ secrets.IRIS_KEY_ALIAS }}
+          IRIS_KEY_PASSWORD: ${{ secrets.IRIS_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,x86_64
+      - name: Verify the signature is the release key, not the debug key
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          SIGNER="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          "$SIGNER" verify --verbose --print-certs "$APK" | tee signer.txt
+          if grep -q "CN=Android Debug" signer.txt; then echo "::error::APK is debug-signed"; exit 1; fi
+          mkdir -p out
+          cp "$APK" "out/iris-desk-voice-$TAG.apk"
+          (cd out && sha256sum "iris-desk-voice-$TAG.apk" > "iris-desk-voice-$TAG.apk.sha256")
+          CERT=$(grep -m1 "certificate SHA-256 digest" signer.txt | awk '{print $NF}')
+          echo "CERT_SHA256=$CERT" >> "$GITHUB_ENV"
+          echo "APK_SHA256=$(cut -d' ' -f1 out/*.sha256)" >> "$GITHUB_ENV"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Iris Desk Voice ${{ env.TAG }}
+          files: |
+            out/iris-desk-voice-${{ env.TAG }}.apk
+            out/iris-desk-voice-${{ env.TAG }}.apk.sha256
+          body: |
+            Android APK for Iris Desk Voice (arm64-v8a and x86_64). **Devnet by default** — mainnet stays off until you turn it on in Settings.
+
+            - Commit: `${{ env.IRIS_COMMIT }}`
+            - APK sha256: `${{ env.APK_SHA256 }}`
+            - Signing certificate sha256: `${{ env.CERT_SHA256 }}`
+
+            Install: download the APK on the phone, allow "install unknown apps" for the browser, open it. Needs a Mobile Wallet Adapter wallet (Phantom or Solflare) on the same phone.
