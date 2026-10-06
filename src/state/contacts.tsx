@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { PublicKey } from "@solana/web3.js";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { isValidAddress } from "../core/address";
 import { Contact, normalizeName } from "../core/contacts";
 
 const KEY = "iris-contacts-v1";
@@ -11,14 +11,6 @@ type Ctx = {
   remove: (name: string) => void;
 };
 const ContactsContext = createContext<Ctx>({ contacts: [], add: () => "not ready", remove: () => {} });
-
-export function isValidAddress(address: string): boolean {
-  try {
-    return new PublicKey(address.trim()).toBase58() === address.trim();
-  } catch {
-    return false;
-  }
-}
 
 export function ContactsProvider({ children }: { children: ReactNode }) {
   const [contacts, setContacts] = useState<Contact[]>([]);

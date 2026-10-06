@@ -5,10 +5,10 @@ import { PublicKey } from "@solana/web3.js";
 import * as Clipboard from "expo-clipboard";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
-import { findAddress, shortAddress } from "../core/address";
+import { shortAddress } from "../core/address";
 import { lamportsToSol, solToLamports } from "../core/amount";
-import { matchContact } from "../core/contacts";
-import { parseIntent, Recipient } from "../core/intent";
+import { parseIntent } from "../core/intent";
+import { checkSend, resolveRecipient } from "../core/planSend";
 import { balanceReply, HELP, historyReply, Reply, say, sendPreviewReply, spokenSol } from "../core/replies";
 import { explorerTxUrl, Network } from "../config/network";
 import { useContacts } from "../state/contacts";
@@ -68,40 +68,6 @@ export function useAssistant() {
   const refreshBalance = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["balance"] });
   }, [queryClient]);
-
-  const resolveRecipient = useCallback(
-    async (r: Recipient): Promise<{ address: string; label: string } | { problem: Reply }> => {
-      switch (r.type) {
-        case "address":
-          return { address: r.address, label: r.address };
-        case "clipboard": {
-          const text = (await Clipboard.getStringAsync()).trim();
-          const address = findAddress(text);
-          if (!address) return { problem: say("Your clipboard doesn't hold a Solana address. Copy one first.") };
-          return { address, label: address };
-        }
-        case "contact": {
-          const m = matchContact(contacts, r.name);
-          if (m.kind === "one") return { address: m.contact.address, label: m.contact.name };
-          if (m.kind === "many") {
-            const names = m.contacts.map((c) => c.name).join(" or ");
-            return { problem: say(`Did you mean ${names}? Say the name again.`) };
-          }
-          return {
-            problem: say(
-              `I don't have a contact called “${r.name}”. Save one in Settings, or copy an address and say “send … to clipboard”.`,
-              `I don't have a contact called ${r.name}. Save one in Settings, or copy an address and say send to clipboard.`,
-            ),
-          };
-        }
-        case "domain":
-          return { problem: say(`I can't look up .sol names yet. Save ${r.name} as a contact with its address.`) };
-        case "missing":
-          return { problem: say("Who should I send it to? Say a saved contact's name, or “to clipboard”.") };
-      }
-    },
-    [contacts],
-  );
 
   const needAccount = useCallback((): PublicKey | null => {
     if (selectedAccount) return selectedAccount.publicKey;
@@ -229,32 +195,15 @@ export function useAssistant() {
             if (intent.token === "SKR") return reply(say("SKR transfers aren't in this build yet. I can send SOL."));
             const me = needAccount();
             if (!me) return;
-            let lamports: bigint;
-            try {
-              lamports = solToLamports(intent.amount);
-            } catch {
-              return reply(say("I didn't understand that amount. Try “send 0.01 SOL to Alice”."));
-            }
-            if (lamports <= BigInt(0)) return reply(say("The amount has to be more than zero."));
-            const who = await resolveRecipient(intent.recipient);
+            const clip = intent.recipient.type === "clipboard" ? await Clipboard.getStringAsync() : null;
+            const who = resolveRecipient(intent.recipient, contacts, clip);
             if ("problem" in who) return reply(who.problem);
-            let to: PublicKey;
-            try {
-              to = new PublicKey(who.address);
-            } catch {
-              return reply(say("That address isn't a valid Solana address."), { tone: "error" });
-            }
-            if (to.equals(me)) return reply(say("That's your own address — nothing to send."));
             setBusy(true);
             const balance = await getBalanceLamports(connection, me);
-            if (lamports + TRANSFER_FEE_LAMPORTS > balance) {
-              return reply(
-                say(`You have ${lamportsToSol(balance)} SOL — not enough for ${lamportsToSol(lamports)} SOL plus the network fee.`),
-                { tone: "error" },
-              );
-            }
-            setPending({ lamports, to: to.toBase58(), label: who.label, network: settings.network, from: me.toBase58(), createdAt: Date.now() });
-            return reply(sendPreviewReply(lamports, who.label, to.toBase58(), settings.network));
+            const check = checkSend(intent.amount, who.address, me.toBase58(), balance, TRANSFER_FEE_LAMPORTS);
+            if (!check.ok) return reply(check.reply, { tone: "error" });
+            setPending({ lamports: check.lamports, to: check.to, label: who.label, network: settings.network, from: me.toBase58(), createdAt: Date.now() });
+            return reply(sendPreviewReply(check.lamports, who.label, check.to, settings.network));
           }
           case "unknown":
             if (intent.reason === "no-amount") return reply(say("How much? Say it like “send 0.01 SOL to Alice”."));
@@ -271,7 +220,7 @@ export function useAssistant() {
         setBusy(false);
       }
     },
-    [push, reply, cancel, confirm, needAccount, connection, settings.network, refreshBalance, resolveRecipient],
+    [push, reply, cancel, confirm, needAccount, connection, settings.network, refreshBalance, contacts],
   );
 
   const note = useCallback((text: string, tone: Message["tone"] = "normal") => reply(say(text), { tone }), [reply]);
