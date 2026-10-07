@@ -46,6 +46,62 @@ jobs:
           fi
           echo "FAKEWALLET_APK=$APK" >> "$GITHUB_ENV"
 
+      # A throwaway devnet wallet that persists between runs in the Actions
+      # cache (never in the repo), so it can be funded once at faucet.solana.com.
+      # The phrase is masked; the summary shows only the address and a fingerprint.
+      - name: Restore demo wallet
+        id: wallet-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.iris-demo-wallet
+          key: iris-demo-wallet-v1
+
+      - name: Demo wallet (devnet only)
+        id: wallet
+        run: |
+          python3 -m venv "$RUNNER_TEMP/wallet-venv"
+          "$RUNNER_TEMP/wallet-venv/bin/pip" install --quiet mnemonic cryptography
+          wallet() { "$RUNNER_TEMP/wallet-venv/bin/python" .github/scripts/demo-wallet.py "$@"; }
+          SEED_FILE="$HOME/.iris-demo-wallet/seed.txt"
+          mkdir -p "$(dirname "$SEED_FILE")"
+          chmod 700 "$(dirname "$SEED_FILE")"
+          if [[ ! -s "$SEED_FILE" ]]; then
+            wallet new > "$SEED_FILE"
+            echo "created=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "::add-mask::$(cat "$SEED_FILE")"
+          ADDRESS="$(wallet address "$SEED_FILE")"
+          FINGERPRINT="$(wallet fingerprint "$SEED_FILE")"
+          rpc() { curl -sS -m 20 https://api.devnet.solana.com -H 'Content-Type: application/json' -d "$1"; }
+          LAMPORTS="$(rpc "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getBalance\",\"params\":[\"$ADDRESS\"]}" | jq -r '.result.value // 0')"
+          if (( LAMPORTS < 50000000 )); then
+            echo "Balance ${LAMPORTS} lamports; asking the devnet faucet:"
+            rpc "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"requestAirdrop\",\"params\":[\"$ADDRESS\",1000000000]}" || true
+            echo
+          fi
+          SOL="$(awk -v l="$LAMPORTS" 'BEGIN { printf "%.4f", l / 1e9 }')"
+          echo "Demo wallet $ADDRESS (seed fingerprint $FINGERPRINT): $SOL SOL on devnet"
+          {
+            echo "DEMO_WALLET_SEED_FILE=$SEED_FILE"
+            echo "DEMO_WALLET_ADDRESS=$ADDRESS"
+          } >> "$GITHUB_ENV"
+          {
+            echo "### Demo wallet (devnet only)"
+            echo "- Address: \`$ADDRESS\`"
+            echo "- Seed fingerprint: \`$FINGERPRINT\`"
+            echo "- Balance at start: $SOL SOL"
+            if (( LAMPORTS < 50000000 )); then
+              echo "- Under 0.05 SOL: the demo records the no-funds path. Fund this address at https://faucet.solana.com (devnet), then run the workflow again."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save demo wallet
+        if: steps.wallet.outputs.created == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.iris-demo-wallet
+          key: iris-demo-wallet-v1
+
       - name: Install ffmpeg (ffprobe for recording length)
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
