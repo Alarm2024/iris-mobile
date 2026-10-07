@@ -35,8 +35,16 @@ jobs:
         run: |
           git clone --depth 1 --branch "${{ env.MWA_TAG }}" https://github.com/solana-mobile/mobile-wallet-adapter.git "$RUNNER_TEMP/mobile-wallet-adapter"
           cd "$RUNNER_TEMP/mobile-wallet-adapter/android"
-          ./gradlew :fakewallet:assembleDebug --no-daemon
-          echo "FAKEWALLET_APK=$RUNNER_TEMP/mobile-wallet-adapter/android/fakewallet/build/outputs/apk/debug/fakewallet-debug.apk" >> "$GITHUB_ENV"
+          # fakewallet has two flavors (v1, legacy) with the same applicationId;
+          # build and install only v1, the protocol Iris speaks.
+          ./gradlew :fakewallet:assembleV1Debug --no-daemon
+          APK="$PWD/fakewallet/build/outputs/apk/v1/debug/fakewallet-v1-debug.apk"
+          if [[ ! -s "$APK" ]]; then
+            echo "::error::fakewallet APK not found at $APK"
+            find fakewallet/build/outputs -name '*.apk' -print
+            exit 1
+          fi
+          echo "FAKEWALLET_APK=$APK" >> "$GITHUB_ENV"
 
       - name: Install ffmpeg (ffprobe for recording length)
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
@@ -54,6 +62,17 @@ jobs:
           script: |
             chmod +x .github/scripts/demo-emulator.sh
             .github/scripts/demo-emulator.sh
+
+      - name: Upload Maestro debug output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-debug
+          path: |
+            ~/.maestro/tests/
+            demo.mp4
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Demo mp4 length
         run: |
