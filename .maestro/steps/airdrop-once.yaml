@@ -1,0 +1,10 @@
+appId: dev.elghaly.irisdeskvoice
+---
+- runFlow: steps/common-start.yaml
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Airdrop 1 SOL"
+- extendedWaitUntil:
+    visible: '(?s).*Airdropped.*'
+    timeout: 90000

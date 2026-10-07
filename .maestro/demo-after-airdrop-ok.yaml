@@ -1,0 +1,50 @@
+appId: dev.elghaly.irisdeskvoice
+---
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "What's my balance?"
+- extendedWaitUntil:
+    visible: '(?s).*You have.*'
+    timeout: 60000
+- runFlow:
+    file: steps/add-alice.yaml
+    env:
+      ALICE_ADDRESS: ${ALICE_ADDRESS}
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Send 0.01 SOL to Alice."
+- extendedWaitUntil:
+    visible: "Confirm send"
+    timeout: 60000
+- tapOn: "Confirm & sign"
+- runFlow: steps/wallet-approve-send.yaml
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Show my last transactions."
+- extendedWaitUntil:
+    visible: '(?s).*Last \d+ transaction.*'
+    timeout: 90000
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Send 5 SOL to Alice"
+- extendedWaitUntil:
+    visible: '(?s).*not enough.*'
+    timeout: 60000
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Send 0.01 to Alice"
+- extendedWaitUntil:
+    visible: "Confirm send"
+    timeout: 60000
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Cancel"
+- extendedWaitUntil:
+    visible: '(?s).*Cancelled.*'
+    timeout: 60000

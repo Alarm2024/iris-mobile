@@ -1,0 +1,11 @@
+flows:
+  - demo.yaml
+  - demo-after-airdrop-ok.yaml
+  - demo-after-airdrop-fail.yaml
+  - demo-full.yaml
+  - demo-skip-send.yaml
+  - steps/airdrop-once.yaml
+  - steps/common-start.yaml
+  - steps/typed-command.yaml
+  - steps/add-alice.yaml
+  - steps/wallet-approve-send.yaml

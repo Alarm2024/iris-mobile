@@ -1,0 +1,31 @@
+appId: dev.elghaly.irisdeskvoice
+---
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "What's my balance?"
+- extendedWaitUntil:
+    visible: '(?s).*You have.*'
+    timeout: 60000
+- runFlow:
+    file: steps/add-alice.yaml
+    env:
+      ALICE_ADDRESS: ${ALICE_ADDRESS}
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Show my last transactions."
+- extendedWaitUntil:
+    visible:
+      text: '(?s).*Last \d+ transaction.*'
+    optional: true
+    timeout: 30000
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Send 5 SOL to Alice"
+- extendedWaitUntil:
+    visible: '(?s).*not enough.*'
+    timeout: 60000
+# With no devnet SOL every send is refused before a card appears, so the
+# confirm-then-cancel step only runs in the airdrop-ok flow.

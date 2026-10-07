@@ -1,0 +1,15 @@
+appId: dev.elghaly.irisdeskvoice
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "DEVNET"
+    timeout: 60000
+- tapOn: "Connect wallet"
+- extendedWaitUntil:
+    visible: "Authorize"
+    timeout: 30000
+- tapOn: "Authorize"
+- extendedWaitUntil:
+    visible: "Balance"
+    timeout: 60000
