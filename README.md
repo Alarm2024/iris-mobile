@@ -10,9 +10,18 @@ you want, check the card, approve in your wallet app.
   to sign and send.
 - **"Airdrop 1 SOL"** — devnet test SOL, for trying it out.
 
-Built for the **Clock In — Solana Mobile Hackathon**. Expo React Native, started
-from [`solana-mobile-expo-template`](https://github.com/solana-mobile/solana-mobile-expo-template),
-native **Mobile Wallet Adapter** (`@solana-mobile/mobile-wallet-adapter-protocol-web3js`).
+Built in **October 2026**. Expo React Native with native **Mobile Wallet Adapter**
+(`@solana-mobile/mobile-wallet-adapter-protocol-web3js`).
+
+**Prior code:** started from [`solana-mobile/solana-mobile-expo-template`](https://github.com/solana-mobile/solana-mobile-expo-template) (MIT).
+
+## Links
+
+| Item | URL |
+|---|---|
+| APK release v0.1.0 | https://github.com/Alarm2024/iris-mobile/releases/download/v0.1.0/iris-desk-voice-v0.1.0.apk |
+| Pitch video | *(placeholder — add link when ready)* |
+| Demo video | *(placeholder — CI workflow `demo-video` uploads to the [demo-video release](https://github.com/Alarm2024/iris-mobile/releases/tag/demo-video))* |
 
 ## Safety model
 
@@ -60,9 +69,9 @@ Nobody can dictate a 44-character base58 address, so a recipient is one of:
 
 1. Open **Iris Desk Voice**. The header shows **DEVNET**.
 2. Tap **Connect wallet**. Phantom or Solflare opens; approve. The address and balance appear.
-3. Hold the mic: **"Airdrop 1 SOL."** The reply is spoken and links to the explorer. (The devnet
+3. Hold the mic or use **Type instead**: **"Airdrop 1 SOL."** The reply is spoken and links to the explorer. (The devnet
    faucet rate-limits; if it refuses, use faucet.solana.com.)
-4. Hold the mic: **"What's my balance?"** → *"You have 1 SOL on devnet."*
+4. **"What's my balance?"** → *"You have 1 SOL on devnet."*
 5. Settings → Contacts → save **Alice** with a second devnet address (paste).
 6. Hold the mic: **"Send 0.01 SOL to Alice."** The confirm card shows 0.01 SOL, Alice's
    full address, DEVNET, and the fee.

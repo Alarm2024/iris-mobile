@@ -12,6 +12,7 @@ import { useSettings } from "../state/settings";
 import { BRAND } from "../theme";
 import { useSpeechInput } from "../voice/useSpeechInput";
 import type { RootStack } from "./types";
+import { submitUserCommand } from "./submitUserCommand";
 
 const SUGGESTIONS = ["What's my balance?", "Show my last transactions", "Airdrop 1 SOL", "Help"];
 
@@ -55,10 +56,7 @@ export function VoiceScreen({ navigation }: NativeStackScreenProps<RootStack, "V
   }, [assistant.messages.length, assistant.pending]);
 
   const submitTyped = () => {
-    const t = typed.trim();
-    if (!t) return;
-    setTyped("");
-    void handle(t);
+    submitUserCommand(typed, handle, () => setTyped(""));
   };
 
   const mainnet = settings.network === "mainnet";
@@ -121,12 +119,12 @@ export function VoiceScreen({ navigation }: NativeStackScreenProps<RootStack, "V
           mode="outlined"
           dense
           style={styles.input}
-          placeholder="Or type a command"
+          placeholder="Type instead"
           value={typed}
           onChangeText={setTyped}
           onSubmitEditing={submitTyped}
           returnKeyType="send"
-          accessibilityLabel="Type a command"
+          accessibilityLabel="Type instead"
           right={<TextInput.Icon icon="send" onPress={submitTyped} accessibilityLabel="Send typed command" />}
         />
         <TalkButton

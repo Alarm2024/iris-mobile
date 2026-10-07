@@ -1,0 +1,51 @@
+appId: dev.elghaly.irisdeskvoice
+---
+- runFlow: steps/common-start.yaml
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Airdrop 1 SOL"
+- extendedWaitUntil:
+    visible: "faucet said no"
+    timeout: 90000
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "What's my balance?"
+- extendedWaitUntil:
+    visible: "You have"
+    timeout: 60000
+- runFlow:
+    file: steps/add-alice.yaml
+    env:
+      ALICE_ADDRESS: ${ALICE_ADDRESS}
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Show my last transactions."
+- extendedWaitUntil:
+    visible:
+      text: "transaction"
+    optional: true
+    timeout: 30000
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Send 5 SOL to Alice"
+- extendedWaitUntil:
+    visible: "not enough"
+    timeout: 60000
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Send 0.01 to Alice"
+- extendedWaitUntil:
+    visible: "Confirm send"
+    timeout: 60000
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Cancel"
+- extendedWaitUntil:
+    visible: "Cancelled"
+    timeout: 60000

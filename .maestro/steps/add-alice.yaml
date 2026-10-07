@@ -1,0 +1,17 @@
+appId: dev.elghaly.irisdeskvoice
+---
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element:
+      text: "Save contact"
+    direction: DOWN
+- tapOn: "Name"
+- inputText: "Alice"
+- tapOn: "Solana address"
+- inputText: ${ALICE_ADDRESS}
+- hideKeyboard
+- tapOn: "Save contact"
+- extendedWaitUntil:
+    visible: "Alice"
+    timeout: 15000
+- back

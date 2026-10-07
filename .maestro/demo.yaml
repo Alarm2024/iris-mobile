@@ -1,0 +1,24 @@
+appId: dev.elghaly.irisdeskvoice
+---
+- runFlow: steps/common-start.yaml
+- repeat:
+    times: 5
+    commands:
+      - runFlow:
+          when:
+            notVisible: "Airdropped"
+          file: steps/typed-command.yaml
+          env:
+            COMMAND: "Airdrop 1 SOL"
+      - extendedWaitUntil:
+          optional: true
+          visible: "Airdropped"
+          timeout: 90000
+- runFlow:
+    when:
+      visible: "Airdropped"
+    file: demo-after-airdrop-ok.yaml
+- runFlow:
+    when:
+      notVisible: "Airdropped"
+    file: demo-after-airdrop-fail.yaml
