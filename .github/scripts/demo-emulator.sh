@@ -8,6 +8,31 @@ ALICE_ADDRESS="${ALICE_ADDRESS:-9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin}"
 RECORD_LIMIT="${RECORD_LIMIT:-170}"
 DEMO_MP4="${DEMO_MP4:-demo.mp4}"
 
+# The log is the one place a failed run can be read from, so print what is
+# on screen: the focused window and every text and id in the UI tree.
+show_screen() {
+  echo "::group::Screen at failure"
+  adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' || true
+  if adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; then
+    adb shell cat /sdcard/ui.xml | grep -oE '(text|resource-id|content-desc)="[^"]+"' || true
+  fi
+  echo "::endgroup::"
+}
+
+finish_recording() {
+  adb shell pkill -INT screenrecord 2>/dev/null || true
+  sleep 4
+  adb pull /sdcard/iris-demo.mp4 "$DEMO_MP4"
+}
+
+on_exit() {
+  local status=$?
+  if [[ $status -ne 0 ]]; then
+    show_screen
+  fi
+  finish_recording
+}
+
 curl -fsSL -o "$RUNNER_TEMP/iris.apk" "$IRIS_APK_URL"
 adb install -r "$RUNNER_TEMP/iris.apk"
 adb install -r "$FAKEWALLET_APK"
@@ -18,19 +43,15 @@ export PATH="$PATH:$HOME/.maestro/bin"
 
 # Before recording: a run-only fakewallet seed, funded from the devnet faucet
 # when it agrees. A refusal is not an error; the demo then shows the no-funds path.
-maestro test .maestro/steps/fakewallet-fund.yaml || echo "::warning::fakewallet funding flow failed; recording without pre-funding"
+if ! maestro test .maestro/steps/fakewallet-fund.yaml; then
+  echo "::warning::fakewallet funding flow failed; recording without pre-funding"
+  show_screen
+fi
 
-# 720x1600 keeps the pixel_6 aspect ratio inside the emulator encoder's limits.
-adb shell screenrecord --time-limit "$RECORD_LIMIT" --size 720x1600 --bit-rate 4000000 /sdcard/iris-demo.mp4 &
+adb shell screenrecord --time-limit "$RECORD_LIMIT" --bit-rate 4000000 /sdcard/iris-demo.mp4 &
 RECORD_PID=$!
 
-finish_recording() {
-  adb shell pkill -INT screenrecord 2>/dev/null || true
-  sleep 4
-  adb pull /sdcard/iris-demo.mp4 "$DEMO_MP4"
-}
-
-trap finish_recording EXIT
+trap on_exit EXIT
 
 maestro test .maestro/demo.yaml -e "ALICE_ADDRESS=$ALICE_ADDRESS"
 
