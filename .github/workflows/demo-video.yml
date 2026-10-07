@@ -2,6 +2,11 @@ name: Demo video
 
 on:
   workflow_dispatch:
+  # Re-run after merging demo flow fixes (bump .github/demo-video-trigger on main).
+  push:
+    branches: [main]
+    paths:
+      - .github/demo-video-trigger
 
 permissions:
   contents: write
