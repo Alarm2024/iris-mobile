@@ -1,0 +1,35 @@
+appId: com.solana.mobilewalletadapter.fakewallet
+---
+# Runs before the recording starts. Gives fakewallet a fresh seed that lives
+# only on this emulator, then asks the devnet faucet to fund its address so
+# the send-and-approve steps can run. If the faucet refuses, the demo records
+# the no-funds path instead.
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "button_generate_seed"
+- extendedWaitUntil:
+    visible:
+      id: "text_active_account"
+      text: "[1-9A-HJ-NP-Za-km-z]{32,44}"
+    timeout: 20000
+- copyTextFrom:
+    id: "text_active_account"
+- repeat:
+    while:
+      true: ${!output.airdropSig}
+    times: 3
+    commands:
+      - runScript:
+          file: ../scripts/devnet-airdrop.js
+          env:
+            ADDRESS: ${maestro.copiedText}
+      - runFlow:
+          when:
+            true: ${!output.airdropSig}
+          commands:
+            # Pause before the next faucet try.
+            - extendedWaitUntil:
+                visible: "pause between faucet tries"
+                timeout: 20000
+                optional: true

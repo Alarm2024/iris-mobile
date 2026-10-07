@@ -22,14 +22,29 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
+      # ubuntu-latest already ships the Android SDK (ANDROID_HOME), as the CI
+      # android job relies on; setup-android@v3 failed on this runner.
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - uses: gradle/actions/setup-gradle@v4
       - name: Build fakewallet (${{ env.MWA_TAG }})
         run: |
           git clone --depth 1 --branch "${{ env.MWA_TAG }}" https://github.com/solana-mobile/mobile-wallet-adapter.git "$RUNNER_TEMP/mobile-wallet-adapter"
           cd "$RUNNER_TEMP/mobile-wallet-adapter/android"
-          ./gradlew :fakewallet:assembleDebug --no-daemon
-          echo "FAKEWALLET_APK=$RUNNER_TEMP/mobile-wallet-adapter/android/fakewallet/build/outputs/apk/debug/fakewallet-debug.apk" >> "$GITHUB_ENV"
+          # fakewallet has two flavors (v1, legacy) with the same applicationId;
+          # build and install only v1, the protocol Iris speaks.
+          ./gradlew :fakewallet:assembleV1Debug --no-daemon
+          APK="$PWD/fakewallet/build/outputs/apk/v1/debug/fakewallet-v1-debug.apk"
+          if [[ ! -s "$APK" ]]; then
+            echo "::error::fakewallet APK not found at $APK"
+            find fakewallet/build/outputs -name '*.apk' -print
+            exit 1
+          fi
+          echo "FAKEWALLET_APK=$APK" >> "$GITHUB_ENV"
 
       - name: Install ffmpeg (ffprobe for recording length)
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
@@ -42,11 +57,28 @@ jobs:
           api-level: 34
           target: google_apis
           arch: x86_64
+          # The default AVD screen is 320x640: too small to read in a video.
+          # Nexus 4 is 768x1280 at xhdpi (384x640 dp), so the layout matches
+          # what the flows were written against; pixel_6 was too slow here.
+          profile: Nexus 4
+          cores: 4
+          ram-size: 3072M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
             chmod +x .github/scripts/demo-emulator.sh
             .github/scripts/demo-emulator.sh
+
+      - name: Upload Maestro debug output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-debug
+          path: |
+            ~/.maestro/tests/
+            demo.mp4
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Demo mp4 length
         run: |

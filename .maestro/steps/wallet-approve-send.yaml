@@ -1,5 +1,11 @@
 appId: dev.elghaly.irisdeskvoice
 ---
+# fakewallet asks twice for a sign-and-send: first "Sign transaction(s)"
+# (tap Authorize), then "Sending transaction(s)" (tap Send transaction to cluster).
+- extendedWaitUntil:
+    visible: "Sign transaction.*"
+    timeout: 60000
+- tapOn: "Authorize"
 - extendedWaitUntil:
     visible: "Send transaction to cluster"
     timeout: 60000

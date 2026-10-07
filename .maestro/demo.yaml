@@ -1,24 +1,29 @@
 appId: dev.elghaly.irisdeskvoice
 ---
 - runFlow: steps/common-start.yaml
-- repeat:
-    times: 5
-    commands:
-      - runFlow:
-          when:
-            notVisible: '(?s).*Airdropped.*'
-          file: steps/typed-command.yaml
-          env:
-            COMMAND: "Airdrop 1 SOL"
-      - extendedWaitUntil:
-          optional: true
-          visible: '(?s).*Airdropped.*'
-          timeout: 90000
+# README step 3: one faucet request. Devnet often rate-limits CI runners, so
+# either reply is fine; the wallet may already hold SOL from fakewallet-fund.
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "Airdrop 1 SOL"
+- extendedWaitUntil:
+    optional: true
+    visible: '(?s).*(Airdropped|faucet said no).*'
+    timeout: 60000
+# README step 4, then branch on whether the wallet holds any SOL.
+- runFlow:
+    file: steps/typed-command.yaml
+    env:
+      COMMAND: "What's my balance?"
+- extendedWaitUntil:
+    visible: '(?s).*You have.*'
+    timeout: 60000
 - runFlow:
     when:
-      visible: '(?s).*Airdropped.*'
+      notVisible: '(?s).*You have 0 SOL.*'
     file: demo-after-airdrop-ok.yaml
 - runFlow:
     when:
-      notVisible: '(?s).*Airdropped.*'
+      visible: '(?s).*You have 0 SOL.*'
     file: demo-after-airdrop-fail.yaml
