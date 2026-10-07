@@ -10,9 +10,16 @@ you want, check the card, approve in your wallet app.
   to sign and send.
 - **"Airdrop 1 SOL"** — devnet test SOL, for trying it out.
 
-Built for the **Clock In — Solana Mobile Hackathon**. Expo React Native, started
-from [`solana-mobile-expo-template`](https://github.com/solana-mobile/solana-mobile-expo-template),
-native **Mobile Wallet Adapter** (`@solana-mobile/mobile-wallet-adapter-protocol-web3js`).
+Built in October 2026. Expo React Native with native **Mobile Wallet Adapter**
+(`@solana-mobile/mobile-wallet-adapter-protocol-web3js`).
+
+**Prior code:** started from [`solana-mobile/solana-mobile-expo-template`](https://github.com/solana-mobile/solana-mobile-expo-template) (MIT); all Iris code was written in October 2026.
+
+## Links
+
+- **APK (v0.1.0):** https://github.com/Alarm2024/iris-mobile/releases/tag/v0.1.0
+- **Pitch video:** TBD
+- **Demo video:** TBD
 
 ## Safety model
 

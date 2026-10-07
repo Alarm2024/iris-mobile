@@ -1,0 +1,81 @@
+appId: dev.elghaly.irisdeskvoice
+env:
+  ALICE_ADDRESS: So11111111111111111111111111111111111111112
+---
+# README demo script steps 1–9 — typed input, fakewallet Authorize taps.
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+- extendedWaitUntil:
+    visible: "DEVNET"
+    timeout: 60000
+# Step 2 — connect wallet (fakewallet on devnet via Iris chain identifier)
+- tapOn: "Connect wallet"
+- runFlow:
+    when:
+      visible: "Fake Wallet"
+    commands:
+      - tapOn: "Fake Wallet"
+- runFlow:
+    when:
+      visible: "Fake Wallet app"
+    commands:
+      - tapOn: "Fake Wallet app"
+- extendedWaitUntil:
+    visible: "Authorize"
+    timeout: 60000
+- tapOn: "Authorize"
+- extendedWaitUntil:
+    notVisible: "Connect wallet"
+    timeout: 90000
+# Step 3 — airdrop with up to 5 attempts
+- runScript:
+    file: airdrop-with-retry.js
+# Step 4 — balance
+- runScript:
+    file: type-command.js
+    env:
+      COMMAND: "What's my balance?"
+- extendedWaitUntil:
+    visible: "SOL on devnet"
+    timeout: 120000
+# Step 5 — save Alice contact
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "Save contact"
+    direction: DOWN
+- tapOn: "Name"
+- inputText: "Alice"
+- tapOn: "Solana address"
+- inputText: ${ALICE_ADDRESS}
+- hideKeyboard
+- tapOn: "Save contact"
+- back
+# Steps 6–8 — send + history when airdrop succeeded
+- runFlow:
+    when:
+      true: ${output.AIRDROP_OK == 'true'}
+    file: send-and-history.yaml
+# Step 9 — refusal and cancel
+- runScript:
+    file: type-command.js
+    env:
+      COMMAND: "Send 5 SOL to Alice"
+- extendedWaitUntil:
+    visible: "not enough"
+    timeout: 120000
+- runScript:
+    file: type-command.js
+    env:
+      COMMAND: "Send 0.01 SOL to Alice"
+- extendedWaitUntil:
+    visible: "Confirm send"
+    timeout: 120000
+- runScript:
+    file: type-command.js
+    env:
+      COMMAND: "Cancel"
+- extendedWaitUntil:
+    visible: "Cancelled"
+    timeout: 60000

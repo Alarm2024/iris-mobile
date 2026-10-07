@@ -1,0 +1,97 @@
+name: Demo video
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  IRIS_APK_URL: https://github.com/Alarm2024/iris-mobile/releases/download/v0.1.0/iris-desk-voice-v0.1.0.apk
+  MWA_TAG: v2.2.0
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Record demo on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -euo pipefail
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq ffmpeg curl
+
+            curl -fsSL "https://get.maestro.mobile.dev" | bash
+            export PATH="$PATH:$HOME/.maestro/bin"
+
+            curl -fsSL -o iris.apk "$IRIS_APK_URL"
+            adb install -r iris.apk
+
+            git clone --depth 1 --branch "$MWA_TAG" https://github.com/solana-mobile/mobile-wallet-adapter.git /tmp/mwa
+            cd /tmp/mwa/android
+            chmod +x gradlew
+            ./gradlew :fakewallet:assembleV1Debug --no-daemon
+            FAKE_APK="$(find fakewallet/build/outputs/apk -name '*-v1-debug.apk' | head -1)"
+            adb install -r "$FAKE_APK"
+
+            cd "$GITHUB_WORKSPACE"
+            chmod +x scripts/record-demo.sh
+
+            adb shell screenrecord --bit-rate 6000000 --time-limit 170 /sdcard/demo.mp4 &
+            REC_PID=$!
+            sleep 2
+
+            scripts/record-demo.sh maestro.log
+
+            adb shell pkill -INT screenrecord || true
+            wait "$REC_PID" || true
+            adb pull /sdcard/demo.mp4 demo.mp4
+
+            DURATION="$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 demo.mp4 | awk '{printf "%.1f", $0}')"
+            echo "DEMO_MP4_SECONDS=$DURATION" >> "$GITHUB_ENV"
+            SKIPPED="$(cat demo-skipped.txt)"
+            echo "DEMO_SKIPPED=$SKIPPED" >> "$GITHUB_ENV"
+            {
+              echo "### Demo recording"
+              echo "- MP4 length (seconds): $DURATION"
+              echo "- Skipped demo steps: $SKIPPED"
+            } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iris-demo-video
+          path: demo.mp4
+          retention-days: 30
+
+      - name: Attach to demo-video release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view demo-video --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create demo-video \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Iris demo video" \
+              --notes "Automated screen recordings of the README demo script (devnet, fakewallet)."
+          fi
+          gh release upload demo-video demo.mp4 --repo "$GITHUB_REPOSITORY" --clobber

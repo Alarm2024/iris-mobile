@@ -3,6 +3,7 @@ import { androidTriggerOfflineModelDownload } from "expo-speech-recognition";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, FlatList, StyleSheet, View } from "react-native";
 import { Appbar, Chip, IconButton, Text, TextInput, useTheme } from "react-native-paper";
+import { userCommandFromText } from "../assistant/commandText";
 import { Message, useAssistant } from "../assistant/useAssistant";
 import { ConfirmCard } from "../components/ConfirmCard";
 import { MessageBubble } from "../components/MessageBubble";
@@ -55,10 +56,10 @@ export function VoiceScreen({ navigation }: NativeStackScreenProps<RootStack, "V
   }, [assistant.messages.length, assistant.pending]);
 
   const submitTyped = () => {
-    const t = typed.trim();
-    if (!t) return;
+    const cmd = userCommandFromText(typed);
+    if (!cmd) return;
     setTyped("");
-    void handle(t);
+    void handle(cmd.text);
   };
 
   const mainnet = settings.network === "mainnet";

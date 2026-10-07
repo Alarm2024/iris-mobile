@@ -1,0 +1,26 @@
+appId: dev.elghaly.irisdeskvoice
+---
+# Step 6 — send preview
+- runScript:
+    file: type-command.js
+    env:
+      COMMAND: "Send 0.01 SOL to Alice"
+- extendedWaitUntil:
+    visible: "Confirm send"
+    timeout: 120000
+- tapOn: "Confirm and sign in wallet"
+- extendedWaitUntil:
+    visible: "Authorize"
+    timeout: 60000
+- tapOn: "Authorize"
+- extendedWaitUntil:
+    visible: "Sent"
+    timeout: 180000
+# Step 8 — history
+- runScript:
+    file: type-command.js
+    env:
+      COMMAND: "Show my last transactions"
+- extendedWaitUntil:
+    visible: "sent"
+    timeout: 120000
