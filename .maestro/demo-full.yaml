@@ -49,10 +49,7 @@ appId: dev.elghaly.irisdeskvoice
 - extendedWaitUntil:
     visible: "Confirm send"
     timeout: 60000
-- runFlow:
-    file: steps/typed-command.yaml
-    env:
-      COMMAND: "Cancel"
+- tapOn: "Cancel"
 - extendedWaitUntil:
     visible: '(?s).*Cancelled.*'
     timeout: 60000
