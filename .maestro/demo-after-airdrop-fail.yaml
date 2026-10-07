@@ -1,12 +1,6 @@
 appId: dev.elghaly.irisdeskvoice
 ---
-- runFlow:
-    file: steps/typed-command.yaml
-    env:
-      COMMAND: "What's my balance?"
-- extendedWaitUntil:
-    visible: '(?s).*You have.*'
-    timeout: 60000
+# demo.yaml has already asked for the balance.
 - runFlow:
     file: steps/add-alice.yaml
     env:

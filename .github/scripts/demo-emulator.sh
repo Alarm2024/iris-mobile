@@ -16,7 +16,12 @@ adb shell pm grant dev.elghaly.irisdeskvoice android.permission.RECORD_AUDIO || 
 curl -fsSL "https://get.maestro.mobile.dev" | bash
 export PATH="$PATH:$HOME/.maestro/bin"
 
-adb shell screenrecord --time-limit "$RECORD_LIMIT" /sdcard/iris-demo.mp4 &
+# Before recording: a run-only fakewallet seed, funded from the devnet faucet
+# when it agrees. A refusal is not an error; the demo then shows the no-funds path.
+maestro test .maestro/steps/fakewallet-fund.yaml || echo "::warning::fakewallet funding flow failed; recording without pre-funding"
+
+# 720x1600 keeps the pixel_6 aspect ratio inside the emulator encoder's limits.
+adb shell screenrecord --time-limit "$RECORD_LIMIT" --size 720x1600 --bit-rate 4000000 /sdcard/iris-demo.mp4 &
 RECORD_PID=$!
 
 finish_recording() {
