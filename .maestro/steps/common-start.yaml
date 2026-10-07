@@ -11,6 +11,5 @@ appId: dev.elghaly.irisdeskvoice
     timeout: 30000
 - tapOn: "Authorize"
 - extendedWaitUntil:
-    visible:
-      id: "Balance"
+    visible: "Balance"
     timeout: 60000

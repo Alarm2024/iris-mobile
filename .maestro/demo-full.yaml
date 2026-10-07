@@ -6,14 +6,14 @@ appId: dev.elghaly.irisdeskvoice
     env:
       COMMAND: "Airdrop 1 SOL"
 - extendedWaitUntil:
-    visible: "Airdropped"
+    visible: '(?s).*Airdropped.*'
     timeout: 90000
 - runFlow:
     file: steps/typed-command.yaml
     env:
       COMMAND: "What's my balance?"
 - extendedWaitUntil:
-    visible: "You have"
+    visible: '(?s).*You have.*'
     timeout: 60000
 - runFlow:
     file: steps/add-alice.yaml
@@ -33,14 +33,14 @@ appId: dev.elghaly.irisdeskvoice
     env:
       COMMAND: "Show my last transactions."
 - extendedWaitUntil:
-    visible: "transaction"
+    visible: '(?s).*Last \d+ transaction.*'
     timeout: 90000
 - runFlow:
     file: steps/typed-command.yaml
     env:
       COMMAND: "Send 5 SOL to Alice"
 - extendedWaitUntil:
-    visible: "not enough"
+    visible: '(?s).*not enough.*'
     timeout: 60000
 - runFlow:
     file: steps/typed-command.yaml
@@ -54,5 +54,5 @@ appId: dev.elghaly.irisdeskvoice
     env:
       COMMAND: "Cancel"
 - extendedWaitUntil:
-    visible: "Cancelled"
+    visible: '(?s).*Cancelled.*'
     timeout: 60000

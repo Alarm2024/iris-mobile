@@ -6,5 +6,5 @@ appId: dev.elghaly.irisdeskvoice
     env:
       COMMAND: "Airdrop 1 SOL"
 - extendedWaitUntil:
-    visible: "Airdropped"
+    visible: '(?s).*Airdropped.*'
     timeout: 90000

@@ -6,19 +6,19 @@ appId: dev.elghaly.irisdeskvoice
     commands:
       - runFlow:
           when:
-            notVisible: "Airdropped"
+            notVisible: '(?s).*Airdropped.*'
           file: steps/typed-command.yaml
           env:
             COMMAND: "Airdrop 1 SOL"
       - extendedWaitUntil:
           optional: true
-          visible: "Airdropped"
+          visible: '(?s).*Airdropped.*'
           timeout: 90000
 - runFlow:
     when:
-      visible: "Airdropped"
+      visible: '(?s).*Airdropped.*'
     file: demo-after-airdrop-ok.yaml
 - runFlow:
     when:
-      notVisible: "Airdropped"
+      notVisible: '(?s).*Airdropped.*'
     file: demo-after-airdrop-fail.yaml

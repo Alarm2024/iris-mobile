@@ -5,5 +5,5 @@ appId: dev.elghaly.irisdeskvoice
     timeout: 60000
 - tapOn: "Send transaction to cluster"
 - extendedWaitUntil:
-    visible: "Confirmed"
+    visible: '(?s).*Confirmed.*'
     timeout: 120000

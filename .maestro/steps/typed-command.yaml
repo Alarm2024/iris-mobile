@@ -1,5 +1,6 @@
 appId: dev.elghaly.irisdeskvoice
 ---
-- tapOn: "Type instead"
+# v0.1.0 labels the box "Type a command"; this branch labels it "Type instead".
+- tapOn: "(Type instead|Type a command)"
 - inputText: ${COMMAND}
 - pressKey: Enter
