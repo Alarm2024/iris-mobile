@@ -41,11 +41,14 @@ adb shell pm grant dev.elghaly.irisdeskvoice android.permission.RECORD_AUDIO || 
 curl -fsSL "https://get.maestro.mobile.dev" | bash
 export PATH="$PATH:$HOME/.maestro/bin"
 
-# Before recording: a run-only fakewallet seed, funded from the devnet faucet
-# when it agrees. A refusal is not an error; the demo then shows the no-funds path.
-if ! maestro test .maestro/steps/fakewallet-fund.yaml; then
-  echo "::warning::fakewallet funding flow failed; recording without pre-funding"
-  show_screen
+# Before recording: load the demo wallet seed into fakewallet. Its debug output
+# stays out of the uploaded artifact, since screenshots would show the phrase.
+if [[ -n "${DEMO_WALLET_SEED_FILE:-}" ]]; then
+  if ! maestro test --debug-output "$RUNNER_TEMP/maestro-seed" .maestro/steps/fakewallet-seed.yaml \
+    -e "SEED=$(cat "$DEMO_WALLET_SEED_FILE")" -e "ADDRESS=$DEMO_WALLET_ADDRESS"; then
+    show_screen
+    exit 1
+  fi
 fi
 
 adb shell screenrecord --time-limit "$RECORD_LIMIT" --bit-rate 4000000 /sdcard/iris-demo.mp4 &

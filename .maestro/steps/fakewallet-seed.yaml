@@ -1,0 +1,17 @@
+appId: com.solana.mobilewalletadapter.fakewallet
+---
+# Runs before the recording starts. Loads the workflow's devnet-only demo seed
+# into fakewallet, so its account 0 is the address in the run summary.
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "button_import_seed"
+- tapOn: "Enter a 12 or 24 word seed phrase"
+- inputText: ${SEED}
+- tapOn:
+    id: "button1"
+- extendedWaitUntil:
+    visible:
+      id: "text_active_account"
+      text: ${ADDRESS}
+    timeout: 20000
