@@ -73,6 +73,7 @@ export function VoiceScreen({ navigation }: NativeStackScreenProps<RootStack, "V
         >
           {mainnet ? "MAINNET" : "DEVNET"}
         </Chip>
+        <Appbar.Action icon="shield-check" accessibilityLabel="Safety card (AR)" onPress={() => navigation.navigate("SafetyCard")} />
         <Appbar.Action icon="cog" accessibilityLabel="Settings" onPress={() => navigation.navigate("Settings")} />
       </Appbar.Header>
 
