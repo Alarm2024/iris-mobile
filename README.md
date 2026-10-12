@@ -38,6 +38,27 @@ Built in **October 2026**. Expo React Native with native **Mobile Wallet Adapter
 - **Balance check first.** It won't build a send that the balance plus the fee
   can't cover.
 
+## AR safety card (ViroReact)
+
+Tap the shield in the top bar. Point the camera at a table or the floor, tap the
+surface when it lights up, and a read-only card stands there, turning to face
+you: the network, the wallet's first and last 4 characters, the balance, the
+last three transactions, and three rules (Iris never asks for your seed phrase;
+check the first and last 4 characters before you send; every send needs your
+approval in the wallet app). A value that cannot be read says UNKNOWN and why.
+
+- **Camera only.** No signing and no sending from this screen; the camera picture
+  is not recorded or sent.
+- **ARM phones with ARCore.** ViroReact's renderer ships for arm64-v8a and
+  armeabi-v7a only. Elsewhere (no ARCore, an x86 emulator) the same card is shown
+  flat, with the reason. "Read as text" shows it as plain text on any phone.
+- **Needs a development or release build** (not Expo Go).
+- `plugins/withViroAr.js` sets up ViroReact 2.43.0 for Android instead of the
+  stock plugin, which would replace the manifest's `<queries>` and drop the
+  speech-recognition entries voice input needs.
+
+Ctrl+Space submission notes: [`docs/CTRL_SPACE.md`](docs/CTRL_SPACE.md).
+
 ## How voice works (free, no API keys)
 
 - **Speech to text:** Android's own `SpeechRecognizer`, through
@@ -148,8 +169,10 @@ src/assistant/useAssistant   utterance → reply; pending send; confirm → wall
 src/voice/                   speech-to-text (hold to talk), text-to-speech
 src/wallet/                  RPC reads, transfer builder, devnet airdrop
 src/utils/                   Mobile Wallet Adapter authorization (per network), from the template
-src/screens/, components/    Voice screen, confirm card, Settings
+src/screens/, components/    Voice screen, confirm card, Settings, safety card
+src/ar/                      ViroReact scene; Viro is loaded with require, never imported (see viro.ts)
 plugins/withReleaseSigning   release signing from env
+plugins/withViroAr           ViroReact for Android: projects, camera permission, ARM-only registration
 ```
 
 ## Limits
