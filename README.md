@@ -20,8 +20,8 @@ Built in **October 2026**. Expo React Native with native **Mobile Wallet Adapter
 | Item | URL |
 |---|---|
 | APK release v0.1.0 | https://github.com/Alarm2024/iris-mobile/releases/download/v0.1.0/iris-desk-voice-v0.1.0.apk |
-| Pitch video | *(placeholder — add link when ready)* |
-| Demo video | *(placeholder — CI workflow `demo-video` uploads to the [demo-video release](https://github.com/Alarm2024/iris-mobile/releases/tag/demo-video))* |
+| Pitch video | https://youtu.be/8mVTWrI32zQ (unlisted) |
+| Demo video | https://youtu.be/fj_CTDCyNsc (unlisted) · CI screen recording (devnet, typed input): [demo-video release](https://github.com/Alarm2024/iris-mobile/releases/tag/demo-video) |
 
 ## Safety model
 
