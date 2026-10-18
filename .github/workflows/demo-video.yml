@@ -100,13 +100,6 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Save demo wallet
-        if: steps.wallet.outputs.created == 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.iris-demo-wallet
-          key: iris-demo-wallet-v1
-
       - name: Install ffmpeg (ffprobe for recording length)
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
