@@ -37,6 +37,13 @@
     "react-native-safe-area-context": "4.12.0",
     "react-native-screens": "~4.4.0"
   },
+  "overrides": {
+    "undici": "6.29.1",
+    "node-forge": "1.4.2",
+    "postcss": "8.5.32",
+    "decode-uri-component": "0.5.1",
+    "image-size": "2.0.4"
+  },
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/jest": "29.5.14",
