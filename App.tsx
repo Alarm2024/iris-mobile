@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "react-native";
 import { PaperProvider, adaptNavigationTheme } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafetyCardScreen } from "./src/screens/SafetyCardScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import type { RootStack } from "./src/screens/types";
 import { VoiceScreen } from "./src/screens/VoiceScreen";
@@ -35,6 +36,7 @@ export default function App() {
                   <Stack.Navigator>
                     <Stack.Screen name="Voice" component={VoiceScreen} options={{ headerShown: false }} />
                     <Stack.Screen name="Settings" component={SettingsScreen} />
+                    <Stack.Screen name="SafetyCard" component={SafetyCardScreen} options={{ title: "Safety card" }} />
                   </Stack.Navigator>
                 </NavigationContainer>
               </PaperProvider>
