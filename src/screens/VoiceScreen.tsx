@@ -66,14 +66,14 @@ export function VoiceScreen({ navigation }: NativeStackScreenProps<RootStack, "V
         <Appbar.Content title="Iris Desk Voice" />
         <Chip
           compact
-          onPress={() => navigation.navigate("Settings")}
+          onPress={() => navigation.popTo("Settings")}
           textStyle={{ color: "#fff", fontWeight: "700" }}
           style={{ backgroundColor: mainnet ? BRAND.mainnet : BRAND.devnet, marginRight: 4 }}
           accessibilityLabel={`Network: ${mainnet ? "mainnet" : "devnet"}. Opens settings.`}
         >
           {mainnet ? "MAINNET" : "DEVNET"}
         </Chip>
-        <Appbar.Action icon="cog" accessibilityLabel="Settings" onPress={() => navigation.navigate("Settings")} />
+        <Appbar.Action icon="cog" accessibilityLabel="Settings" onPress={() => navigation.popTo("Settings")} />
       </Appbar.Header>
 
       <WalletBar onError={(m) => note(m, "error")} />

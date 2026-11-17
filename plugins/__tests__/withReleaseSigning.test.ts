@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { addReleaseSigning } = require("../withReleaseSigning");
 
-// The shape `expo prebuild` writes for SDK 52 (trimmed).
+// The shape `expo prebuild` writes for SDK 58 (trimmed).
 const GRADLE = `android {
     signingConfigs {
         debug {
