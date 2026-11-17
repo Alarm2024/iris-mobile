@@ -11,7 +11,7 @@ appId: dev.elghaly.irisdeskvoice
 # Deep link routes (React Navigation linking config).
 - openLink: irisdeskvoice://settings
 - extendedWaitUntil:
-    visible: "Contacts"
+    visible: '(?s).*Contacts.*'
     timeout: 15000
 - openLink: irisdeskvoice://
 - extendedWaitUntil:
