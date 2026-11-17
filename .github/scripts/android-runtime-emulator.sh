@@ -25,6 +25,19 @@ adb shell pm grant dev.elghaly.irisdeskvoice android.permission.RECORD_AUDIO || 
 curl -fsSL "https://get.maestro.mobile.dev" | bash
 export PATH="$PATH:$HOME/.maestro/bin"
 
+if ! maestro test "$ROOT/.maestro/android-runtime-launch.yaml" --debug-output "$RUNNER_TEMP/maestro-android-runtime-launch"; then
+  show_screen
+  exit 1
+fi
+
+echo "30s idle on Voice (no crash)…"
+sleep 30
+if ! adb shell pidof dev.elghaly.irisdeskvoice >/dev/null 2>&1; then
+  echo "::error::Iris exited during 30s idle"
+  show_screen
+  exit 1
+fi
+
 if ! maestro test "$ROOT/.maestro/android-runtime-smoke.yaml" --debug-output "$RUNNER_TEMP/maestro-android-runtime"; then
   show_screen
   exit 1

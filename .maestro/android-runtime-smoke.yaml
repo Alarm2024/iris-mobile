@@ -1,16 +1,5 @@
 appId: dev.elghaly.irisdeskvoice
 ---
-- launchApp:
-    clearState: true
-    stopApp: true
-- extendedWaitUntil:
-    visible: "DEVNET"
-    timeout: 90000
-# Stay on Voice for 30s with no crash (assert still on home UI).
-- extendedWaitUntil:
-    visible: "Hold the mic and talk."
-    timeout: 5000
-- wait: 30000
 - tapOn: "Settings"
 - extendedWaitUntil:
     visible: "Network"
