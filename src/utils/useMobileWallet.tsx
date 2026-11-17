@@ -1,4 +1,4 @@
-import { transact } from "@solana-mobile/mobile-wallet-adapter-protocol-web3js";
+import { transact, type Web3MobileWallet } from "@solana-mobile/mobile-wallet-adapter-protocol-web3js";
 import { Account, useAuthorization } from "./useAuthorization";
 import {
   Transaction,
@@ -7,6 +7,48 @@ import {
 } from "@solana/web3.js";
 import { useCallback, useMemo } from "react";
 import { SignInPayload } from "@solana-mobile/mobile-wallet-adapter-protocol";
+import { isWalletUserDecline, walletSupportsTransaction, type TxVersionCheckable } from "./walletCapabilities";
+
+async function signAndSendWithOptionalRetry(
+  wallet: Web3MobileWallet,
+  transaction: Transaction | VersionedTransaction,
+  minContextSlot: number,
+): Promise<TransactionSignature> {
+  const { supported_transaction_versions: versions } = await wallet.getCapabilities();
+  if (!walletSupportsTransaction(versions, transaction as TxVersionCheckable)) {
+    throw Object.assign(new Error("This wallet only supports legacy transactions."), { code: -2 });
+  }
+  for (;;) {
+    try {
+      const signatures = await wallet.signAndSendTransactions({
+        transactions: [transaction],
+        minContextSlot,
+      });
+      return signatures[0];
+    } catch (error) {
+      if (!isWalletUserDecline(error)) throw error;
+      // MWA 3: a decline must not tear down the session; the user can approve on the next try.
+    }
+  }
+}
+
+async function signMessageWithOptionalRetry(
+  wallet: Web3MobileWallet,
+  address: Account["address"],
+  message: Uint8Array,
+): Promise<Uint8Array> {
+  for (;;) {
+    try {
+      const signedMessages = await wallet.signMessages({
+        addresses: [address],
+        payloads: [message],
+      });
+      return signedMessages[0];
+    } catch (error) {
+      if (!isWalletUserDecline(error)) throw error;
+    }
+  }
+}
 
 export function useMobileWallet() {
   const { authorizeSessionWithSignIn, authorizeSession, deauthorizeSession, forgetAuthorization } =
@@ -46,11 +88,7 @@ export function useMobileWallet() {
     ): Promise<TransactionSignature> => {
       return await transact(async (wallet) => {
         await authorizeSession(wallet);
-        const signatures = await wallet.signAndSendTransactions({
-          transactions: [transaction],
-          minContextSlot,
-        });
-        return signatures[0];
+        return await signAndSendWithOptionalRetry(wallet, transaction, minContextSlot);
       });
     },
     [authorizeSession]
@@ -60,11 +98,7 @@ export function useMobileWallet() {
     async (message: Uint8Array): Promise<Uint8Array> => {
       return await transact(async (wallet) => {
         const authResult = await authorizeSession(wallet);
-        const signedMessages = await wallet.signMessages({
-          addresses: [authResult.address],
-          payloads: [message],
-        });
-        return signedMessages[0];
+        return await signMessageWithOptionalRetry(wallet, authResult.address, message);
       });
     },
     [authorizeSession]
