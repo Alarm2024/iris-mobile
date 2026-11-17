@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { ActivityIndicator, Avatar, Button, Surface, Text, useTheme } from "react-native-paper";
 import { displaySol } from "../core/amount";
 import { shortAddress } from "../core/address";
+import { walletErrorMessage } from "../core/walletErrors";
 import { useSettings } from "../state/settings";
 import { useAuthorization } from "../utils/useAuthorization";
 import { useMobileWallet } from "../utils/useMobileWallet";
@@ -32,7 +33,7 @@ export function WalletBar({ onError }: { onError: (message: string) => void }) {
           mode="contained"
           icon="wallet"
           onPress={() =>
-            connect().catch((e: unknown) => onError(`Couldn't connect: ${e instanceof Error ? e.message : String(e)}`))
+            connect().catch((e: unknown) => onError(walletErrorMessage(e)))
           }
         >
           Connect wallet

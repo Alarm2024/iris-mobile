@@ -1,0 +1,13 @@
+appId: dev.elghaly.irisdeskvoice
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- tapOn:
+    text: "Wait"
+    optional: true
+- extendedWaitUntil:
+    visible: "DEVNET"
+    timeout: 120000
+- assertVisible: "Hold the mic and talk."
+- assertVisible: "Connect wallet"

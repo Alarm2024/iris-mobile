@@ -1,4 +1,6 @@
 flows:
+  - android-runtime-launch.yaml
+  - android-runtime-smoke.yaml
   - demo.yaml
   - demo-after-airdrop-ok.yaml
   - demo-after-airdrop-fail.yaml
