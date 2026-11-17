@@ -7,24 +7,25 @@ import {
 } from "@solana/web3.js";
 import { useCallback, useMemo } from "react";
 import { SignInPayload } from "@solana-mobile/mobile-wallet-adapter-protocol";
+import { clearAuthOnMwaError } from "./clearAuthOnMwaError";
 
 export function useMobileWallet() {
   const { authorizeSessionWithSignIn, authorizeSession, deauthorizeSession, forgetAuthorization } =
     useAuthorization();
 
   const connect = useCallback(async (): Promise<Account> => {
-    return await transact(async (wallet) => {
-      return await authorizeSession(wallet);
-    });
-  }, [authorizeSession]);
+    return await clearAuthOnMwaError(forgetAuthorization, () =>
+      transact(async (wallet) => authorizeSession(wallet)),
+    );
+  }, [authorizeSession, forgetAuthorization]);
 
   const signIn = useCallback(
     async (signInPayload: SignInPayload): Promise<Account> => {
-      return await transact(async (wallet) => {
-        return await authorizeSessionWithSignIn(wallet, signInPayload);
-      });
+      return await clearAuthOnMwaError(forgetAuthorization, () =>
+        transact(async (wallet) => authorizeSessionWithSignIn(wallet, signInPayload)),
+      );
     },
-    [authorizeSessionWithSignIn]
+    [authorizeSessionWithSignIn, forgetAuthorization],
   );
 
   // Deauthorize in the wallet when it can be reached; forget the token here
@@ -44,30 +45,34 @@ export function useMobileWallet() {
       transaction: Transaction | VersionedTransaction,
       minContextSlot: number,
     ): Promise<TransactionSignature> => {
-      return await transact(async (wallet) => {
-        await authorizeSession(wallet);
-        const signatures = await wallet.signAndSendTransactions({
-          transactions: [transaction],
-          minContextSlot,
-        });
-        return signatures[0];
-      });
+      return await clearAuthOnMwaError(forgetAuthorization, () =>
+        transact(async (wallet) => {
+          await authorizeSession(wallet);
+          const signatures = await wallet.signAndSendTransactions({
+            transactions: [transaction],
+            minContextSlot,
+          });
+          return signatures[0];
+        }),
+      );
     },
-    [authorizeSession]
+    [authorizeSession, forgetAuthorization],
   );
 
   const signMessage = useCallback(
     async (message: Uint8Array): Promise<Uint8Array> => {
-      return await transact(async (wallet) => {
-        const authResult = await authorizeSession(wallet);
-        const signedMessages = await wallet.signMessages({
-          addresses: [authResult.address],
-          payloads: [message],
-        });
-        return signedMessages[0];
-      });
+      return await clearAuthOnMwaError(forgetAuthorization, () =>
+        transact(async (wallet) => {
+          const authResult = await authorizeSession(wallet);
+          const signedMessages = await wallet.signMessages({
+            addresses: [authResult.address],
+            payloads: [message],
+          });
+          return signedMessages[0];
+        }),
+      );
     },
-    [authorizeSession]
+    [authorizeSession, forgetAuthorization],
   );
 
   return useMemo(

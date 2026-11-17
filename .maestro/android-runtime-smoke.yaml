@@ -17,6 +17,13 @@ appId: dev.elghaly.irisdeskvoice
 - extendedWaitUntil:
     visible: "Connect wallet"
     timeout: 15000
+# Hostile deep link: must not open a wallet authorize/sign prompt.
+- openLink: irisdeskvoice://wallet/sign
+- extendedWaitUntil:
+    visible: "Hold the mic and talk."
+    timeout: 15000
+- assertVisible: "Connect wallet"
+- assertNotVisible: "Opening your wallet to approve…"
 # MWA transact() with no wallet installed — expect a handled error, app stays up.
 - tapOn: "Connect wallet"
 - extendedWaitUntil:
