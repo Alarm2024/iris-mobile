@@ -21,6 +21,8 @@ fi
 
 adb install -r "$APK"
 adb shell pm grant dev.elghaly.irisdeskvoice android.permission.RECORD_AUDIO || true
+adb logcat -c
+adb shell am start -W -S -n dev.elghaly.irisdeskvoice/.MainActivity || true
 
 curl -fsSL "https://get.maestro.mobile.dev" | bash
 export PATH="$PATH:$HOME/.maestro/bin"
