@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "react-native";
 import { PaperProvider, adaptNavigationTheme } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { linking } from "./src/navigation/linking";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import type { RootStack } from "./src/screens/types";
 import { VoiceScreen } from "./src/screens/VoiceScreen";
@@ -30,7 +31,7 @@ export default function App() {
           <ContactsProvider>
             <ConnectionProvider>
               <PaperProvider theme={paper}>
-                <NavigationContainer theme={nav}>
+                <NavigationContainer theme={nav} linking={linking}>
                   <StatusBar style={dark ? "light" : "dark"} />
                   <Stack.Navigator>
                     <Stack.Screen name="Voice" component={VoiceScreen} options={{ headerShown: false }} />

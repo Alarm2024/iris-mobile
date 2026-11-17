@@ -1,0 +1,38 @@
+appId: dev.elghaly.irisdeskvoice
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- extendedWaitUntil:
+    visible: "DEVNET"
+    timeout: 90000
+# Stay on Voice for 30s with no crash (assert still on home UI).
+- extendedWaitUntil:
+    visible: "Hold the mic and talk."
+    timeout: 5000
+- wait: 30000
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Network"
+    timeout: 15000
+- back
+- extendedWaitUntil:
+    visible: "Hold the mic and talk."
+    timeout: 15000
+# Deep link routes (React Navigation linking config).
+- openLink: irisdeskvoice://settings
+- extendedWaitUntil:
+    visible: "Contacts"
+    timeout: 15000
+- openLink: irisdeskvoice://
+- extendedWaitUntil:
+    visible: "Connect wallet"
+    timeout: 15000
+# MWA transact() with no wallet installed — expect a handled error, app stays up.
+- tapOn: "Connect wallet"
+- extendedWaitUntil:
+    visible: '(?s).*(No Mobile Wallet Adapter wallet|Install Phantom|Solflare).*'
+    timeout: 45000
+- extendedWaitUntil:
+    visible: "Connect wallet"
+    timeout: 5000
